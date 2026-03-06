@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="manifest.json">
+    <title>JORDAN DOG WALKING</title>
+    <style>
+        :root { --blue: #007BFF; --black: #121212; --white: #FFFFFF; }
+        body { background: var(--black); color: var(--white); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        .app-container { width: 90%; max-width: 400px; background: #1e1e1e; padding: 30px; border-radius: 15px; border-top: 5px solid var(--blue); text-align: center; }
+        .step { display: none; }
+        .step.active { display: block; }
+        h2 { color: var(--blue); margin-bottom: 10px; }
+        p { margin: 10px 0 5px; font-size: 14px; color: #bbb; }
+        input, select { width: 100%; padding: 12px; margin-bottom: 15px; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 8px; box-sizing: border-box; }
+        .btn { background: var(--blue); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn:disabled { background: #444; cursor: not-allowed; }
+        .price-tag { background: #000; padding: 15px; border-radius: 10px; border: 1px dashed var(--blue); margin: 15px 0; }
+        .price-num { font-size: 24px; color: #2ecc71; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div id="step1" class="step">
+            <h2>Get Started</h2>
+            <input type="text" id="user" placeholder="Username">
+            <input type="email" id="email" placeholder="Gmail Address">
+            <input type="password" id="pass" placeholder="Password">
+            <button class="btn" onclick="saveUser()">SIGN UP</button>
+        </div>
+
+        <div id="step2" class="step">
+            <h2>Walk Details</h2>
+            
+            <p>Dog Size:</p>
+            <select id="dogSize" onchange="calculatePrice()">
+                <option value="">-- Select Size --</option>
+                <option value="Small">Small</option>
+                <option value="Medium">Medium</option>
+                <option value="Large">Large (+$5)</option>
+            </select>
+            
+            <p>How many dogs?</p>
+            <select id="dogCount" onchange="calculatePrice()">
+                <option value="">-- Select Amount --</option>
+                <option value="1">1 Dog</option>
+                <option value="2">2 Dogs (+$5)</option>
+                <option value="3">3 Dogs (+$10)</option>
+            </select>
+
+            <p>How long?</p>
+            <select id="duration" onchange="calculatePrice()">
+                <option value="">-- Select Duration --</option>
+                <option value="10">10 Minutes ($10)</option>
+                <option value="20">20 Minutes ($15)</option>
+                <option value="30">30 Minutes ($20)</option>
+                <option value="60">1 Hour ($35)</option>
+            </select>
+
+            <div class="price-tag">
+                ESTIMATED PRICE:<br>
+                <span class="price-num" id="displayPrice">$0.00</span>
+            </div>
+            
+            <button class="btn" id="confirmBtn" onclick="nextStep(3)" disabled>CONFIRM PRICE</button>
+        </div>
+
+        <div id="step3" class="step">
+            <h2>Final Contact</h2>
+            <input type="tel" id="phone" placeholder="Phone Number">
+            <button class="btn" onclick="submitData()">BOOK NOW</button>
+        </div>
+
+        <div id="step4" class="step">
+            <h2 style="color: #2ecc71;">Request Sent!</h2>
+            <p id="finalMsg"></p>
+            <p style="font-size: 12px; color: #666;">If you need help call: 352-345-3203</p>
+            <button class="btn" style="margin-top:20px; background:#333;" onclick="location.reload()">BACK HOME</button>
+        </div>
+    </div>
+
+    <script>
+        let currentPrice = 0;
+
+        function calculatePrice() {
+            const size = document.getElementById('dogSize').value;
+            const count = document.getElementById('dogCount').value;
+            const time = document.getElementById('duration').value;
+            const confirmBtn = document.getElementById('confirmBtn');
+
+            // If any field is empty, keep price at 0 and disable button
+            if (size === "" || count === "" || time === "") {
+                currentPrice = 0;
+                document.getElementById('displayPrice').innerText = "$0.00";
+                confirmBtn.disabled = true;
+                return;
+            }
+
+            confirmBtn.disabled = false;
+            let base = 10;
+            if(time == "20") base = 15;
+            if(time == "30") base = 20;
+            if(time == "60") base = 35;
+
+            if(size == "Large") base += 5;
+            if(parseInt(count) > 1) base += (parseInt(count) - 1) * 5;
+
+            currentPrice = base;
+            document.getElementById('displayPrice').innerText = "$" + currentPrice.toFixed(2);
+        }
+
+        window.onload = () => {
+            const savedUser = localStorage.getItem('jordan_user');
+            if (savedUser) nextStep(2); else nextStep(1);
+        };
+
+        function saveUser() {
+            const username = document.getElementById('user').value;
+            if(username) {
+                localStorage.setItem('jordan_user', username);
+                nextStep(2);
+            }
+        }
+
+        function nextStep(step) {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.getElementById('step' + step).classList.add('active');
+        }
+
+        async function submitData() {
+            const webhookURL = "https://discord.com/api/webhooks/1479592401717952724/PKjo2q8f81Wfj4wuQEiPr6L_pEfBBMsCxNQCVgrzZXFtz2DLD-aZ3Sumy7Z96067bfYb";
+            const username = localStorage.getItem('jordan_user');
+            
+            const data = {
+                username: "Jordan's Dog Walker",
+                embeds: [{
+                    title: "🐕 NEW BOOKING",
+                    color: 32767,
+                    fields: [
+                        { name: "Client", value: username, inline: true },
+                        { name: "Phone", value: document.getElementById('phone').value, inline: true },
+                        { name: "Total Price", value: "$" + currentPrice.toFixed(2), inline: true },
+                        { name: "Details", value: `${document.getElementById('dogCount').value} dog(s), ${document.getElementById('duration').value} mins, Size: ${document.getElementById('dogSize').value}` }
+                    ]
+                }]
+            };
+
+            await fetch(webhookURL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            
+            document.getElementById('finalMsg').innerText = `Thank you! I'm Jordan. Please pay $${currentPrice.toFixed(2)} in person when I arrive. I will try to reach out to you soon.`;
+            nextStep(4);
+        }
+    </script>
+</body>
+</html>
